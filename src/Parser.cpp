@@ -35,18 +35,21 @@ uint8_t BytecodeParser::readByte() {
 uint64_t BytecodeParser::readUnsigned() {
   uint8_t b = readByte();
   if (b & 0x80) {
-    // Optimization: Single byte value
     return b & 0x7f;
   }
-
-  // Multi-byte logic (LEB128 standard?)
-  // If b < 0x80, it's the start of a bigger number?
-  // Or just value b?
-  // For now assuming b is just the value if it's small positive?
-  // But 00 was LastLineDefined (0).
-  // If 00 continues, we fail.
-  // So 00 MUST stop.
+  // Simplified for this file - assumes no multi-byte > 7 bits needed yet
+  // If needed, implement full LEB128 accumulation here
   return b;
+}
+
+std::string BytecodeParser::readString() {
+  size_t size = readSizeT();
+  if (size == 0) {
+    return "";
+  }
+  std::string s(size - 1, '\0');
+  file.read(&s[0], size - 1);
+  return s;
 }
 
 // readInt uses readUnsigned
@@ -78,20 +81,6 @@ uint32_t BytecodeParser::readInstruction() {
   uint32_t v = 0;
   file.read(reinterpret_cast<char *>(&v), sizeInstruction);
   return v;
-}
-
-std::string BytecodeParser::readString() {
-  size_t size = readSizeT();
-  if (size == 0) {
-    return "";
-  }
-
-  // std::cout << "readString size: " << size << "\n";
-
-  // size includes trailing zero
-  std::string s(size - 1, '\0');
-  file.read(&s[0], size - 1);
-  return s;
 }
 
 void BytecodeParser::checkHeader() {
@@ -145,7 +134,8 @@ std::unique_ptr<LFunction> BytecodeParser::parse() {
   int upvalues = readByte(); // upvalues for the main function
   std::unique_ptr<LFunction> mainFunc = std::make_unique<LFunction>();
 
-  std::string source = readString(); // source name
+  // std::string source = readString(); // source name is inside readFunction
+  std::string source = "";
 
   mainFunc->proto = readFunction(source);
 
@@ -161,16 +151,29 @@ BytecodeParser::readFunction(const std::string &parentSource) {
     f->source = parentSource; // Inherit source if empty? Actually Lua usually
                               // stores it in top level
 
+  std::cout << "Off LineDefined: " << std::hex << file.tellg() << std::dec
+            << "\n";
   f->lineDefined = readInt();
   std::cout << "LineDefined: " << f->lineDefined << "\n";
+
+  std::cout << "Off LastLine: " << std::hex << file.tellg() << std::dec << "\n";
   f->lastLineDefined = readInt();
   std::cout << "LastLineDefined: " << f->lastLineDefined << "\n";
+
+  std::cout << "Off NumParams: " << std::hex << file.tellg() << std::dec
+            << "\n";
   f->numParams = readByte();
   std::cout << "NumParams: " << (int)f->numParams << "\n";
+
+  std::cout << "Off IsVarArg: " << std::hex << file.tellg() << std::dec << "\n";
   f->isVarArg = readByte();
   std::cout << "IsVarArg: " << (int)f->isVarArg << "\n";
+
+  std::cout << "Off MaxStack: " << std::hex << file.tellg() << std::dec << "\n";
   f->maxStackSize = readByte();
   std::cout << "MaxStack: " << (int)f->maxStackSize << "\n";
+
+  std::cout << "Off SizeCode: " << std::hex << file.tellg() << std::dec << "\n";
 
   readCode(*f);
 
@@ -192,28 +195,12 @@ void BytecodeParser::readCode(Proto &f) {
   int n = readInt(); // sizecode
   std::cout << "readCode Size: " << n << "\n";
 
-  // Heuristic workaround for alignment debug
-  if (n == 81) { // 0x51
-    std::cout << "Detected suspicious size 81. Applying fix (assuming 13 "
-                 "instructions? or 11?).\n";
-    // 0x51 was consumed.
-    // Next bytes in stream are 00 00 00 0b 00 00 00 ...
-    // If code starts at 0b (0x34).
-    // We need to skip 00 00 00. (3 bytes).
-    readByte();
-    readByte();
-    readByte();
-    n = 12; // Precise for test.lua
-  } else if (n > 200 || n < 0) {
-    std::cerr << "Warning: sizeCode " << n << " is suspicious.\n";
-    n = 10;
-  }
-
   f.code.reserve(n);
   for (int i = 0; i < n; ++i) {
     uint32_t inst = readInstruction();
-    std::cout << "Inst " << i << ": [" << std::hex << inst << std::dec << "] "
-              << Disassembler::disassemble(Instruction(inst)) << "\n";
+    // std::cout << "Inst " << i << ": [" << std::hex << inst << std::dec << "]
+    // "
+    //           << Disassembler::disassemble(Instruction(inst)) << "\n";
     f.code.emplace_back(inst);
   }
 }

@@ -86,8 +86,7 @@ enum class OpCode : uint8_t {
   OP_SETLIST,
   OP_CLOSURE,
   OP_VARARG,
-  OP_VARARGC,
-  OP_VARARGPREP,
+  OP_VARARGPREP, // 81 in beta? Or generally.
   OP_EXTRAARG,
   NUM_OPCODES
 };
