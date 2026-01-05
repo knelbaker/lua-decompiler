@@ -1,0 +1,126 @@
+Byte: 54
+Byte: 0
+Byte: 4
+Byte: 8
+Byte: 8
+Sizes: Inst=4 Int=8 Num=8
+Byte: 1
+Byte: 8a
+readSizeT: 10
+Byte: 80
+readSizeT: 0
+Byte: 80
+readInt: 0
+LineDefined: 0
+Byte: 0
+readInt: 0
+LastLineDefined: 0
+Byte: 1
+NumParams: 1
+Byte: 6
+IsVarArg: 6
+Byte: 8d
+MaxStack: 141
+Byte: 51
+readInt: 81
+readCode Size: 81
+Detected suspicious size 81. Applying fix (assuming 13 instructions? or 11?).
+Byte: 0
+Byte: 0
+Byte: 0
+Inst 0: [b] GETTABUP   0 0 0 (k=0)
+Inst 1: [8083] LOADK      1 1
+Inst 2: [1020044] TAILCALL   0 2 1 (k=0)
+Inst 3: [80048001] LOADI      0 10
+Inst 4: [80098081] LOADI      1 20
+Inst 5: [1000122] ADD        2 0 1 (k=0)
+Inst 6: [601002e] MMBIN      0 1 6 (k=0)
+Inst 7: [18b] GETTABUP   3 0 0 (k=0)
+Inst 8: [10203] LOADK      4 2
+Inst 9: [20280] MOVE       5 2 0 (k=0)
+Inst 10: [10301c4] TAILCALL   3 3 1 (k=0)
+Inst 11: [10101c6] RETURN0    3 1 1 (k=0)
+Byte: 83
+readInt: 3
+Byte: 4
+Byte: 86
+readSizeT: 6
+Byte: 4
+Byte: 94
+readSizeT: 20
+Byte: 4
+Byte: 88
+readSizeT: 8
+Byte: 81
+readInt: 1
+Byte: 1
+Byte: 0
+Byte: 0
+readInt: 0
+Byte: 80
+readInt: 0
+Byte: 8d
+readInt: 13
+Byte: 1
+readInt: 1
+Byte: 0
+readInt: 0
+Byte: 0
+readInt: 0
+Byte: 0
+readInt: 0
+Byte: 1
+readInt: 1
+Byte: 1
+readInt: 1
+Byte: 1
+readInt: 1
+Byte: 0
+readInt: 0
+Byte: 1
+readInt: 1
+Byte: 0
+readInt: 0
+Byte: 0
+readInt: 0
+Byte: 0
+readInt: 0
+Byte: 0
+readInt: 0
+Byte: 80
+readInt: 0
+Byte: 83
+readInt: 3
+Byte: 82
+readInt: 2
+Byte: 61
+readInt: 97
+Byte: 85
+readInt: 5
+Byte: 8d
+readInt: 13
+Byte: 82
+readInt: 2
+Byte: 62
+readInt: 98
+Byte: 86
+readInt: 6
+Byte: 8d
+readInt: 13
+Byte: 82
+readInt: 2
+Byte: 63
+readInt: 99
+Byte: 88
+readInt: 8
+Byte: 8d
+readInt: 13
+Byte: 81
+readSizeT: 1
+Byte: 85
+readInt: 5
+Byte: 5f
+readInt: 95
+Byte: 45
+readSizeT: 69
+Error: Unexpected EOF while reading byte

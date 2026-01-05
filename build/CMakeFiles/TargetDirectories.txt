@@ -1,0 +1,3 @@
+/home/knelb/code/lua-decompiler/build/CMakeFiles/lua_decompiler.dir
+/home/knelb/code/lua-decompiler/build/CMakeFiles/edit_cache.dir
+/home/knelb/code/lua-decompiler/build/CMakeFiles/rebuild_cache.dir

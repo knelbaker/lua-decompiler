@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/knelb/code/lua-decompiler/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
