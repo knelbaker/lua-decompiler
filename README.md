@@ -53,7 +53,3 @@ print(msg)
 *   `src/Decompiler.cpp` - CFG construction.
 *   `src/ASTGenerator.cpp` - AST creation logic.
 *   `src/CodeEmitter.cpp` - Lua source code generation.
-
-## License
-
-MIT
