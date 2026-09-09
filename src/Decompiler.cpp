@@ -20,25 +20,39 @@ void Decompiler::createBasicBlocks() {
     OpCode op = inst.getOpCode();
 
     // Target of a jump is a leader
-    if (op == OpCode::OP_JMP || op == OpCode::OP_EQ || op == OpCode::OP_LT ||
-        op == OpCode::OP_LE || op == OpCode::OP_TEST ||
-        op == OpCode::OP_TESTSET || op == OpCode::OP_FORLOOP ||
+    if (op == OpCode::OP_JMP || op == OpCode::OP_FORLOOP ||
+        op == OpCode::OP_FORPREP || op == OpCode::OP_TFORPREP ||
         op == OpCode::OP_TFORLOOP) {
 
       int target = getJumpTarget(pc, inst);
-      if (target >= 0 && target < (int)proto.code.size()) {
+      if (target >= 0 && target < static_cast<int>(proto.code.size())) {
         leaders.insert(target);
       }
 
-      // Instruction following a jump/branch is a leader
+      // Instruction following an unconditional/loop jump is a leader
       if (pc + 1 < proto.code.size()) {
         leaders.insert(pc + 1);
       }
     }
 
+    // Conditional test instructions skip the next instruction (which is usually a JMP)
+    if (op == OpCode::OP_EQ || op == OpCode::OP_LT || op == OpCode::OP_LE ||
+        op == OpCode::OP_EQK || op == OpCode::OP_EQI || op == OpCode::OP_LTI ||
+        op == OpCode::OP_LEI || op == OpCode::OP_GTI || op == OpCode::OP_GEI ||
+        op == OpCode::OP_TEST || op == OpCode::OP_TESTSET ||
+        op == OpCode::OP_LFALSESKIP) {
+
+      if (pc + 1 < proto.code.size()) {
+        leaders.insert(pc + 1);
+      }
+      if (pc + 2 < proto.code.size()) {
+        leaders.insert(pc + 2);
+      }
+    }
+
     // Return instructions terminate block, so next is leader
     if (op == OpCode::OP_RETURN || op == OpCode::OP_RETURN0 ||
-        op == OpCode::OP_RETURN1) {
+        op == OpCode::OP_RETURN1 || op == OpCode::OP_TAILCALL) {
       if (pc + 1 < proto.code.size()) {
         leaders.insert(pc + 1);
       }
@@ -51,7 +65,7 @@ void Decompiler::createBasicBlocks() {
   while (it != leaders.end()) {
     int start = *it;
     it++;
-    int end = (it != leaders.end()) ? *it : proto.code.size();
+    int end = (it != leaders.end()) ? *it : static_cast<int>(proto.code.size());
 
     auto block = std::make_unique<BasicBlock>();
     block->id = currentID++;
@@ -69,6 +83,9 @@ void Decompiler::createBasicBlocks() {
 
 void Decompiler::linkBasicBlocks() {
   for (auto *block : sequentialBlocks) {
+    if (block->instructions.empty())
+      continue;
+
     int lastPC = block->endPC - 1;
     Instruction lastInst = proto.code[lastPC];
     OpCode op = lastInst.getOpCode();
@@ -81,11 +98,11 @@ void Decompiler::linkBasicBlocks() {
         blocks[target]->predecessors.push_back(block->id);
       }
     } else if (op == OpCode::OP_RETURN || op == OpCode::OP_RETURN0 ||
-               op == OpCode::OP_RETURN1) {
-      // No successors
+               op == OpCode::OP_RETURN1 || op == OpCode::OP_TAILCALL) {
+      // No successors (terminator)
     } else {
       // Fallthrough
-      if (block->endPC < (int)proto.code.size()) {
+      if (block->endPC < static_cast<int>(proto.code.size())) {
         int nextPC = block->endPC;
         if (blocks.count(nextPC)) {
           block->successors.push_back(blocks[nextPC]->id);
@@ -93,11 +110,9 @@ void Decompiler::linkBasicBlocks() {
         }
       }
 
-      // Conditional branches also have a jump target + fallthrough
-      if (op == OpCode::OP_EQ || op == OpCode::OP_LT || op == OpCode::OP_LE ||
-          op == OpCode::OP_TEST || op == OpCode::OP_TESTSET ||
-          op == OpCode::OP_FORLOOP) { // FORLOOP jumps back if loop continues
-
+      // Loops or branches that jump in addition to fallthrough
+      if (op == OpCode::OP_FORLOOP || op == OpCode::OP_FORPREP ||
+          op == OpCode::OP_TFORPREP || op == OpCode::OP_TFORLOOP) {
         int target = getJumpTarget(lastPC, lastInst);
         if (blocks.count(target)) {
           block->successors.push_back(blocks[target]->id);
@@ -110,24 +125,17 @@ void Decompiler::linkBasicBlocks() {
 
 int Decompiler::getJumpTarget(int pc, Instruction inst) {
   OpCode op = inst.getOpCode();
-  // Lua 5.4 JMP uses sJ (25 bit) or sBx??
-  // Wait, OP_JMP in 5.4 uses sJ.
-  // Conditional uses k? No, usually follows JMP?
-  // Actually Lua 5.4 branch instructions often skip the NEXT instruction if
-  // condition is false. But the generic Jump uses offset.
-
   if (op == OpCode::OP_JMP) {
     return pc + 1 + inst.getsJ();
   } else if (op == OpCode::OP_FORLOOP) {
-    return pc + 1 + inst.getsBx();
+    return pc + 1 - inst.getBx();
+  } else if (op == OpCode::OP_FORPREP) {
+    return pc + 1 + inst.getBx() + 1;
+  } else if (op == OpCode::OP_TFORPREP) {
+    return pc + 1 + inst.getBx();
+  } else if (op == OpCode::OP_TFORLOOP) {
+    return pc + 1 - inst.getBx();
   }
-
-  // For test jumps, standard Lua 5.4 usually encodes jump offset in the
-  // instruction? Or is it "Skip next instruction"? "OP_EQ(A,B,k) if ((RK(B) ==
-  // RK(C)) ~= k) then pc++" So if condition fails, valid. If condition passes,
-  // skip next. Usually next instruction is a JMP. So the block logic above
-  // handles "Fallthrough" which is correct. The explicit jump target is only
-  // for instructions that embed a jump.
 
   return -1;
 }

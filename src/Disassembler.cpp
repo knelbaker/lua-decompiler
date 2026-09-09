@@ -8,18 +8,20 @@ std::string Disassembler::disassemble(const Instruction &inst) {
   std::string name = getOpCodeName(op);
 
   std::stringstream ss;
-  ss << std::left << std::setw(10) << name << " ";
+  ss << std::left << std::setw(11) << name << " ";
 
   switch (mode) {
   case OpMode::iABC:
-    ss << inst.getA() << " " << inst.getB() << " " << inst.getC()
-       << " (k=" << inst.getk() << ")";
-    break;
-  case OpMode::iABx:
-    ss << inst.getA() << " " << inst.getBx();
+    ss << inst.getA() << " " << inst.getB() << " " << inst.getC();
+    if (inst.getk()) {
+      ss << " (k)";
+    }
     break;
   case OpMode::iAsBx:
     ss << inst.getA() << " " << inst.getsBx();
+    break;
+  case OpMode::iABx:
+    ss << inst.getA() << " " << inst.getBx();
     break;
   case OpMode::iAx:
     ss << inst.getAx();

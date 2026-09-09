@@ -31,8 +31,9 @@ struct LValue {
 };
 
 struct UpvalueInfo {
-  bool instack;
-  uint8_t idx;
+  bool instack = false;
+  uint8_t idx = 0;
+  uint8_t kind = 0;
   std::string name; // From debug info
 };
 

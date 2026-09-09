@@ -53,6 +53,7 @@ enum class OpCode : uint8_t {
   OP_SHL,
   OP_SHR,
   OP_MMBIN,
+  OP_MMBINI,
   OP_MMBINK,
   OP_UNM,
   OP_BNOT,
@@ -86,7 +87,7 @@ enum class OpCode : uint8_t {
   OP_SETLIST,
   OP_CLOSURE,
   OP_VARARG,
-  OP_VARARGPREP, // 81 in beta? Or generally.
+  OP_VARARGPREP,
   OP_EXTRAARG,
   NUM_OPCODES
 };
@@ -107,7 +108,7 @@ constexpr int SIZE_C = 8;
 constexpr int SIZE_B = 8;
 constexpr int SIZE_Bx = SIZE_C + SIZE_B + 1; // 17
 constexpr int SIZE_A = 8;
-constexpr int SIZE_AX = SIZE_C + SIZE_B + 1 + SIZE_A; // 25
+constexpr int SIZE_AX = SIZE_Bx + SIZE_A;    // 25
 constexpr int SIZE_OP = 7;
 
 // Offsets
@@ -116,9 +117,9 @@ constexpr int POS_A = POS_OP + SIZE_OP;
 constexpr int POS_k = POS_A + SIZE_A;
 constexpr int POS_B = POS_k + 1;
 constexpr int POS_C = POS_B + SIZE_B;
-constexpr int POS_Bx = POS_A + SIZE_A;
-constexpr int POS_Ax = POS_OP + SIZE_OP;
-constexpr int POS_sJ = POS_OP + SIZE_OP;
+constexpr int POS_Bx = POS_k;
+constexpr int POS_Ax = POS_A;
+constexpr int POS_sJ = POS_A;
 
 // Bitmasks
 constexpr uint32_t BITMASK(int n) { return (~((~(uint32_t)0) << n)); }
@@ -146,18 +147,21 @@ struct Instruction {
 
   // Signed conversions
   // Lua uses excess-K representation for signed values
-  // MAX_ARG_Bx = (1<<17) - 1
-  // OFFSET_sBx = MAX_ARG_Bx >> 1  = 65535
-
   static constexpr int MAX_ARG_Bx = (1 << SIZE_Bx) - 1;
-  static constexpr int OFFSET_sBx = MAX_ARG_Bx >> 1;
+  static constexpr int OFFSET_sBx = MAX_ARG_Bx >> 1; // 65535
 
   static constexpr int MAX_ARG_sJ = (1 << SIZE_AX) - 1;
-  static constexpr int OFFSET_sJ = MAX_ARG_sJ >> 1;
+  static constexpr int OFFSET_sJ = MAX_ARG_sJ >> 1;  // 16777215
+
+  static constexpr int OFFSET_sC = 127;
 
   int getsBx() const { return getBx() - OFFSET_sBx; }
 
   int getsJ() const { return getAx() - OFFSET_sJ; }
+
+  int getsB() const { return getB() - OFFSET_sC; }
+
+  int getsC() const { return getC() - OFFSET_sC; }
 };
 
 std::string getOpCodeName(OpCode op);

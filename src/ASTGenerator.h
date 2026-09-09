@@ -2,6 +2,8 @@
 #include "AST.h"
 #include "Decompiler.h"
 #include <map>
+#include <set>
+#include <string>
 
 class ASTGenerator {
 public:
@@ -16,11 +18,17 @@ private:
   // Register tracking (Symbolic execution state)
   // Map register index -> Expression at current point
   std::map<int, std::unique_ptr<Expression>> registers;
+  std::set<const LocalVarInfo *> declaredLocals;
 
   void processBlock(BasicBlock *block, BlockStatement &outBlock);
 
-  // Expression helpers
-  std::unique_ptr<Expression> getRegisterExpr(int reg);
+  // Expression and Register helpers
+  int getLocalSlot(size_t varIndex) const;
+  const LocalVarInfo *findActiveLocal(int reg, int pc) const;
+  std::unique_ptr<Expression> getRegisterExpr(int reg, int pc);
   std::unique_ptr<Expression> getConstantExpr(int kIdx);
   std::unique_ptr<Expression> getUpvalueExpr(int uIdx);
+  void setRegister(int reg, int pc, std::unique_ptr<Expression> expr,
+                   BlockStatement &outBlock);
+  void checkPendingLocalDefs(int pc, BlockStatement &outBlock);
 };
